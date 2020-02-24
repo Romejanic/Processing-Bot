@@ -16,7 +16,7 @@ public class ProcessingBot extends ListenerAdapter {
 	
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
-		String messageText = event.getMessage().getContentRaw();
+		String messageText = event.getMessage().getContentRaw().trim();
 		boolean isPM = event.getChannelType() == ChannelType.PRIVATE;
 		boolean prefixed = messageText.toLowerCase().startsWith("!processing");
 		
