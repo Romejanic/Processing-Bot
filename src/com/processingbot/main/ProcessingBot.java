@@ -2,13 +2,47 @@ package com.processingbot.main;
 
 import javax.security.auth.login.LoginException;
 
+import com.processingbot.request.RequestHandler;
+
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class ProcessingBot extends ListenerAdapter {
 
+	private final RequestHandler requestHandler = new RequestHandler();
+	
+	@Override
+	public void onMessageReceived(MessageReceivedEvent event) {
+		String messageText = event.getMessage().getContentRaw();
+		boolean isPM = event.getChannelType() == ChannelType.PRIVATE;
+		boolean prefixed = messageText.toLowerCase().startsWith("!processing");
+		
+		if(event.getAuthor().isBot()) return;
+		if(!prefixed && !isPM) return;
+		if(isPM && prefixed) {
+			event.getChannel().sendMessage("Psst, you don't need the `!processing` prefix in private messages! Try sending your command without it.").queue();
+			return;
+		}
+		
+		String[] args;
+		if(!isPM) {
+			if(messageText.length() == "!processing".length()) {
+				args = new String[0];
+			} else {
+				args = messageText
+						.substring("!processing ".length())
+						.split(" ");
+			}
+		} else {
+			args = messageText.split(" ");
+		}
+		
+		this.requestHandler.process(args, event.getChannel());
+	}
+	
 	public static void main(String[] args) {
 		AuthSettings auth = new AuthSettings();
 		if(!auth.loadSettings()) {
@@ -27,15 +61,6 @@ public class ProcessingBot extends ListenerAdapter {
 			e.printStackTrace();
 			return;
 		}
-	}
-	
-	@Override
-	public void onMessageReceived(MessageReceivedEvent event) {
-		if(event.getAuthor().isBot()) return;
-		event.getChannel().sendMessage(
-			"Hi " + event.getAuthor().getAsMention() + "! You said: `"
-			+ event.getMessage().getContentStripped() + "`")
-		.queue();
 	}
 	
 }
