@@ -31,7 +31,11 @@ public class ProcessingBot extends ListenerAdapter {
 	
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
-		System.out.println(event.getAuthor().getAsTag() + " said " + event.getMessage().getContentStripped());
+		if(event.getAuthor().isBot()) return;
+		event.getChannel().sendMessage(
+			"Hi " + event.getAuthor().getAsMention() + "! You said: `"
+			+ event.getMessage().getContentStripped() + "`")
+		.queue();
 	}
 	
 }
