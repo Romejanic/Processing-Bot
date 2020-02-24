@@ -1,0 +1,10 @@
+# eclipse
+/bin/
+*.class
+
+# bot credentials
+auth.properties
+
+# other
+.DS_Store
+*/.DS_Store
