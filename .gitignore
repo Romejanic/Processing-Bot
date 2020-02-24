@@ -2,9 +2,17 @@
 /bin/
 *.class
 
+# gradle
+.gradle
+/build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
 # bot credentials
 auth.properties
 
 # other
 .DS_Store
 */.DS_Store
+/.gradle/
