@@ -19,6 +19,7 @@ import javax.tools.ToolProvider;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import processing.awt.PGraphicsJava2D;
+import processing.awt.PSurfaceAWT;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 
@@ -39,6 +40,7 @@ public class SketchRunner extends Thread {
 					return;
 				}
 				Path compiledSketch = this.compileCode(instanceID, sketchPath);
+				System.out.println(sketchCode);
 				
 				URL classURL = null;
 				try {
@@ -77,6 +79,10 @@ public class SketchRunner extends Thread {
 					try {
 						PApplet sketch = clazz.newInstance();
 						PGraphics graphics = new PGraphicsJava2D();
+						PSurfaceAWT surface = new PSurfaceAWT(graphics);
+						
+						surface.initOffscreen(sketch);
+						surface.setSize(sketch.displayWidth, sketch.displayHeight);
 						sketch.g = graphics;
 						sketch.setup();
 						ImageIO.write((BufferedImage)graphics.getImage(), "PNG", new File("test.png"));
@@ -114,10 +120,14 @@ public class SketchRunner extends Thread {
 		StringBuilder codeBuilder = new StringBuilder();
 		
 		// firstly, isolate the size() call
-//		if(code.contains("size(")) {
-//			int idx = code.indexOf("size(");
-//			String call = 
-//		}
+		String sizeCall = null;
+		if(code.contains("size(")) {
+			int idx = code.indexOf("size(");
+			sizeCall = code.substring(idx);
+			int endIdx = sizeCall.indexOf(')');
+			sizeCall = sizeCall.substring(0, endIdx + 1);
+			code = code.substring(0, idx) + code.substring(idx + endIdx + 1);
+		}
 		
 		// IMPORTS
 		codeBuilder.append("import processing.core.*;\n");
@@ -141,7 +151,9 @@ public class SketchRunner extends Thread {
 		codeBuilder.append("\nnoLoop();\n");
 		codeBuilder.append("}\n");
 		// SETTINGS
-		codeBuilder.append("public void settings() {}\n");
+		codeBuilder.append("public void settings() {");
+		if(sizeCall != null) { codeBuilder.append(sizeCall); }
+		codeBuilder.append("; }\n");
 		// FINAL CODE
 		codeBuilder.append("}");
 		return codeBuilder.toString();
