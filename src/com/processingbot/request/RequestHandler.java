@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 public class RequestHandler {
 	
-	private static final String LOGO = "https://cdn.discordapp.com/avatars/681415272187559959/b102e6a2c285d43bb4732d3f90a62673.png?size=64";
+	public static final String LOGO = "https://cdn.discordapp.com/avatars/681415272187559959/b102e6a2c285d43bb4732d3f90a62673.png?size=64";
 	private static final String GITHUB = "[GitHub](https://github.com/Romejanic/Processing-Bot)";
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
@@ -18,8 +18,13 @@ public class RequestHandler {
 	public void process(String[] args, MessageChannel channel) {
 		if(args.length < 1 || args[0].equalsIgnoreCase("help")) {
 			printHelp(channel);
-		} // TODO: add condition for code blocks
-		else {
+		} else if(args[0].startsWith("```") && args[args.length-1].endsWith("```")) {
+			String code = join(args);
+			int startIdx = code.indexOf('\n');
+			int endIdx = code.length() - 4;
+			code = code.substring(startIdx, endIdx);
+			SketchRunner.runCode(code, channel);
+		} else {
 			switch(args[0]) {
 			case "codehelp":
 				printCodeHelp(channel);
@@ -28,7 +33,8 @@ public class RequestHandler {
 				printBotInfo(channel);
 				break;
 			default:
-				channel.sendMessage("Oops, I don't recognize the command `" + args[0] + "`. Type `!processing help` for a list of commands.").queue();
+				String prefix = channel.getType() == ChannelType.PRIVATE ? "" : "!processing ";
+				channel.sendMessage("Oops, I don't recognize the command `" + args[0] + "`. Type `" + prefix + "help` for a list of commands.").queue();
 				break;
 			}
 		}
@@ -102,6 +108,17 @@ public class RequestHandler {
 				err.printStackTrace(System.err);
 			}
 		});
+	}
+	
+	private String join(String[] arr) {
+		StringBuilder builder = new StringBuilder();
+		for(int i = 0; i < arr.length; i++) {
+			builder.append(arr[i]);
+			if(i < arr.length-1) {
+				builder.append(" ");
+			}
+		}
+		return builder.toString();
 	}
 	
 }

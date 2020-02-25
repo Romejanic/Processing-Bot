@@ -6,7 +6,7 @@
 			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_191"/>
 	<classpathentry kind="lib" path="C:/Users/Jack Davenport/.gradle/caches/modules-2/files-2.1/net.dv8tion/JDA/4.1.1_108/135e813a5df6fd6e9bc19f5b414d83474829a5e0/JDA-4.1.1_108.jar" sourcepath="C:/Users/Jack Davenport/.gradle/caches/modules-2/files-2.1/net.dv8tion/JDA/4.1.1_108/68b463f0c3ef572b05d0e084ebcbf25f09338513/JDA-4.1.1_108-sources.jar">
 		<attributes>
 			<attribute name="gradle_used_by_scope" value="main,test"/>
