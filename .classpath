@@ -87,5 +87,6 @@
 			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="libs/core.jar"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>
