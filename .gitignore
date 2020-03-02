@@ -16,3 +16,6 @@ auth.properties
 .DS_Store
 */.DS_Store
 /.gradle/
+
+# Exported images
+/test.png

@@ -2,6 +2,7 @@ package com.processingbot.request;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,6 +16,8 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+
+import com.processingbot.processing.PAppletBot;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -73,20 +76,22 @@ public class SketchRunner extends Thread {
 				sketchPath.toFile().delete();
 				compiledSketch.toFile().delete();
 				
-				if(PApplet.class.isAssignableFrom(sketchClass)) {
+				if(PAppletBot.class.isAssignableFrom(sketchClass)) {
 					@SuppressWarnings("unchecked")
-					Class<? extends PApplet> clazz = (Class<? extends PApplet>)sketchClass;
+					Class<? extends PAppletBot> clazz = (Class<? extends PAppletBot>)sketchClass;
 					try {
-						PApplet sketch = clazz.newInstance();
+						PAppletBot sketch = clazz.newInstance();
 						PGraphics graphics = new PGraphicsJava2D();
-						PSurfaceAWT surface = new PSurfaceAWT(graphics);
 						
-						surface.initOffscreen(sketch);
-						surface.setSize(sketch.displayWidth, sketch.displayHeight);
+						sketch.settings();
+						graphics.setSize(sketch.width, sketch.height);
 						sketch.g = graphics;
+						graphics.beginDraw();
 						sketch.setup();
-						ImageIO.write((BufferedImage)graphics.getImage(), "PNG", new File("test.png"));
-					} catch (InstantiationException | IllegalAccessException | IOException e) {
+						graphics.endDraw();
+						
+						//ByteArrayOutputStream out = new ByteArrayOutputStream();
+					} catch (InstantiationException | IllegalAccessException e) {
 						System.err.println("Error occurred while running sketch!");
 						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
@@ -141,10 +146,11 @@ public class SketchRunner extends Thread {
 		codeBuilder.append("import java.io.InputStream;\n");
 		codeBuilder.append("import java.io.OutputStream;\n");
 		codeBuilder.append("import java.io.IOException;\n");
+		codeBuilder.append("import com.processingbot.processing.PAppletBot;\n");
 		// CLASS HEADER
 		codeBuilder.append("public class Sketch_");
 		codeBuilder.append(instanceID);
-		codeBuilder.append(" extends PApplet {\n");
+		codeBuilder.append(" extends PAppletBot {\n");
 		// SETUP()
 		codeBuilder.append("public void setup() {\n");
 		codeBuilder.append(code);
