@@ -11,6 +11,7 @@ public class PAppletBot extends PApplet {
 
 	private PrintStream outputStream;
 	private PrintStream errorStream;
+	private Runnable exitListener;
 
 	private void functionUnsupported(String method) {
 		errorStream.printf("Function %s() not supported by ProcessingBot\n", method);
@@ -19,6 +20,14 @@ public class PAppletBot extends PApplet {
 	public void setPrintStreams(PrintStream outputStream, PrintStream errorStream) {
 		this.outputStream = outputStream;
 		this.errorStream = errorStream;
+	}
+	
+	public void setExitListener(Runnable exitListener) {
+		this.exitListener = exitListener;
+	}
+	
+	public void warning(String text) {
+		errorStream.println(text);
 	}
 
 	//---------------------------------------------------------------------------
@@ -54,6 +63,17 @@ public class PAppletBot extends PApplet {
 
 	public final void stop() {
 		this.functionUnsupported("stop");
+	}
+	
+	@Override
+	public void exit() {
+		exit(0);
+	}
+	
+	public void exit(int code) {
+		if(code != 0) errorStream.println("Sketch exited with code " + code);
+		this.exitCalled = true;
+		this.exitListener.run();
 	}
 
 }

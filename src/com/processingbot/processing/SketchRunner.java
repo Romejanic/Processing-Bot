@@ -45,7 +45,7 @@ public class SketchRunner extends Thread {
 					return;
 				}
 				Path compiledSketch = this.compileCode(instanceID, sketchPath);
-				
+
 				URL classURL = null;
 				try {
 					classURL = compiledSketch.getParent().toUri().toURL();
@@ -59,7 +59,7 @@ public class SketchRunner extends Thread {
 					future.complete(false);
 					return;
 				}
-				
+
 				Class<?> sketchClass = null;
 				try {
 					URLClassLoader classloader = URLClassLoader.newInstance(new URL[] { classURL });
@@ -74,22 +74,37 @@ public class SketchRunner extends Thread {
 					future.complete(false);
 					return;
 				}
-				
+
 				// delete temporary resources
 				sketchPath.toFile().delete();
 				compiledSketch.toFile().delete();
-				
+
 				if(PAppletBot.class.isAssignableFrom(sketchClass)) {
 					@SuppressWarnings("unchecked")
 					Class<? extends PAppletBot> clazz = (Class<? extends PAppletBot>)sketchClass;
 					try {
 						PAppletBot sketch = clazz.newInstance();
 						PGraphics graphics = new PGraphicsJava2D();
-						
+
 						ByteArrayOutputStream sysOut   = new ByteArrayOutputStream();
 						ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
 						sketch.setPrintStreams(new PrintStream(sysOut), new PrintStream(errorOut));
-						
+
+						Runnable onComplete = () -> {
+							ByteArrayOutputStream out = new ByteArrayOutputStream();
+							try {
+								ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
+								sendRunEmbed(out.toByteArray(), errorOut.toString(), sender, instanceID, channel);
+								future.complete(true);
+							} catch (IOException e) {
+								System.err.println("Failed to convert image to bytes!");
+								e.printStackTrace();
+								this.sendDiagnosticEmbed("There was an error sending the output image.\n\n`" + e.toString() + "`", channel);
+								future.complete(false);
+							}
+						};
+						sketch.setExitListener(onComplete);
+
 						sketch.settings();
 						graphics.setSize(sketch.width, sketch.height);
 						graphics.setParent(sketch);
@@ -97,14 +112,12 @@ public class SketchRunner extends Thread {
 						graphics.beginDraw();
 						graphics.background(128f);
 						sketch.setup();
-						graphics.endDraw();
-						
-						ByteArrayOutputStream out = new ByteArrayOutputStream();
-						ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
-						
-						sendRunEmbed(out.toByteArray(), errorOut.toString(), sender, instanceID, channel);
-						future.complete(true);
-					} catch (InstantiationException | IllegalAccessException | IOException e) {
+
+						if(!sketch.exitCalled()) {
+							graphics.endDraw();
+							onComplete.run();
+						}
+					} catch (InstantiationException | IllegalAccessException e) {
 						System.err.println("Error occurred while running sketch!");
 						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
@@ -118,27 +131,27 @@ public class SketchRunner extends Thread {
 		};
 		runner.start();
 	}
-	
+
 	public SketchRunner(String name) {
 		super(name);
 	}
-	
+
 	protected Path compileCode(String instanceID, Path target) {
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		compiler.run(null, null, null, target.toFile().getAbsolutePath()); // TODO: log compilation errors
 		return target.getParent().resolve("Sketch_" + instanceID + ".class");
 	}
-	
+
 	protected void writeToPath(String data, Path path) throws IOException {
 		FileOutputStream out = new FileOutputStream(path.toFile());
 		out.write(data.getBytes(), 0, data.length());
 		out.flush();
 		out.close();
 	}
-	
+
 	protected String convertCode(String instanceID, String code) {
 		StringBuilder codeBuilder = new StringBuilder();
-		
+
 		// firstly, isolate the size() call
 		String sizeCall = null;
 		if(code.contains("size(")) {
@@ -148,7 +161,13 @@ public class SketchRunner extends Thread {
 			sizeCall = sizeCall.substring(0, endIdx + 1);
 			code = code.substring(0, idx) + code.substring(idx + endIdx + 1);
 		}
-		
+
+		// make sure that System.exit() calls are replaced with exit()
+		if(code.contains("System.exit(")) {
+			// get rid of 'System.' so the 'exit()' part stays
+			code = code.replaceAll("System.", "warning(\"You cannot use System.exit() in sketches. Use exit() instead.\");");
+		}
+
 		// IMPORTS
 		codeBuilder.append("import processing.core.*;\n");
 		codeBuilder.append("import processing.data.*;\n");
@@ -179,7 +198,7 @@ public class SketchRunner extends Thread {
 		codeBuilder.append("}");
 		return codeBuilder.toString();
 	}
-	
+
 	protected void sendDiagnosticEmbed(String error, MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Error running code", null, RequestHandler.LOGO);
@@ -187,7 +206,7 @@ public class SketchRunner extends Thread {
 		embed.setColor(Color.red);
 		channel.sendMessage(embed.build()).queue();
 	}
-	
+
 	protected void sendRunEmbed(byte[] image, String stderr, String sender, String id, MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Sketch", null, RequestHandler.LOGO);
@@ -199,5 +218,5 @@ public class SketchRunner extends Thread {
 		channel.sendFile(image, id + ".png").queue();
 		channel.sendMessage(embed.build()).queue();
 	}
-	
+
 }

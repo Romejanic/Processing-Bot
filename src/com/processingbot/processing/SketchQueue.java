@@ -8,12 +8,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import com.processingbot.security.SketchSecurityManager;
+
 import net.dv8tion.jda.api.entities.MessageChannel;
 
 public class SketchQueue extends Thread {
 
 	private volatile boolean running = true;
 	private final Queue<SketchData> sketchQueue = new LinkedBlockingQueue<SketchData>();
+	
+	private final SketchSecurityManager security;
+	
+	public SketchQueue() {
+		this.security = new SketchSecurityManager();
+	}
 	
 	public FutureSketch enqueueSketch(String code, String author, MessageChannel channel, Consumer<Boolean> callback) {
 		FutureSketch future = new FutureSketch(callback);
@@ -26,7 +34,9 @@ public class SketchQueue extends Thread {
 		while(this.running) {
 			SketchData data = this.sketchQueue.poll();
 			if(data != null) {
+//				this.security.enable();
 				SketchRunner.runCode(data.code, data.author, data.channel, data.future);
+//				this.security.disable();
 			}
 		}
 	}
