@@ -40,7 +40,7 @@ public class ProcessingBot extends ListenerAdapter {
 			args = messageText.split(" ");
 		}
 		
-		this.requestHandler.process(args, event.getAuthor().getAsTag(), event.getChannel());
+		this.requestHandler.process(args, event.getMessage(), event.getChannel());
 	}
 	
 	public static void main(String[] args) {

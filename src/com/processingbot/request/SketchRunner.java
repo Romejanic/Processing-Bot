@@ -43,7 +43,6 @@ public class SketchRunner extends Thread {
 					return;
 				}
 				Path compiledSketch = this.compileCode(instanceID, sketchPath);
-				System.out.println(sketchCode);
 				
 				URL classURL = null;
 				try {
@@ -83,11 +82,13 @@ public class SketchRunner extends Thread {
 						PAppletBot sketch = clazz.newInstance();
 						PGraphics graphics = new PGraphicsJava2D();
 						
+						ByteArrayOutputStream sysOut   = new ByteArrayOutputStream();
 						ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
-						sketch.setErrorStream(new PrintStream(errorOut));
+						sketch.setPrintStreams(new PrintStream(sysOut), new PrintStream(errorOut));
 						
 						sketch.settings();
 						graphics.setSize(sketch.width, sketch.height);
+						graphics.setParent(sketch);
 						sketch.g = graphics;
 						graphics.beginDraw();
 						graphics.background(128f);

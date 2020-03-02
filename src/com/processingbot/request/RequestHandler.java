@@ -5,6 +5,7 @@ import java.awt.Color;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
@@ -15,7 +16,7 @@ public class RequestHandler {
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
 	
-	public void process(String[] args, String sender, MessageChannel channel) {
+	public void process(String[] args, Message msg, MessageChannel channel) {
 		if(args.length < 1 || args[0].equalsIgnoreCase("help")) {
 			printHelp(channel);
 		} else if(args[0].startsWith("```") && args[args.length-1].endsWith("```")) {
@@ -23,7 +24,8 @@ public class RequestHandler {
 			int startIdx = code.indexOf('\n');
 			int endIdx = code.length() - 4;
 			code = code.substring(startIdx, endIdx);
-			SketchRunner.runCode(code, sender, channel);
+			SketchRunner.runCode(code, msg.getAuthor().getAsTag(), channel);
+			msg.addReaction("🤔").queue();
 		} else {
 			switch(args[0]) {
 			case "codehelp":
