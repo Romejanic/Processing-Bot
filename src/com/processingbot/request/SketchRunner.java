@@ -1,16 +1,18 @@
 package com.processingbot.request;
 
 import java.awt.Color;
-import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
@@ -22,13 +24,11 @@ import com.processingbot.processing.PAppletBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import processing.awt.PGraphicsJava2D;
-import processing.awt.PSurfaceAWT;
-import processing.core.PApplet;
 import processing.core.PGraphics;
 
 public class SketchRunner extends Thread {
 
-	public static void runCode(String code, MessageChannel channel) {
+	public static void runCode(String code, String sender, MessageChannel channel) {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
 		SketchRunner runner = new SketchRunner("Run Sketch " + instanceID) {
 			public void run() {
@@ -83,15 +83,22 @@ public class SketchRunner extends Thread {
 						PAppletBot sketch = clazz.newInstance();
 						PGraphics graphics = new PGraphicsJava2D();
 						
+						ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
+						sketch.setErrorStream(new PrintStream(errorOut));
+						
 						sketch.settings();
 						graphics.setSize(sketch.width, sketch.height);
 						sketch.g = graphics;
 						graphics.beginDraw();
+						graphics.background(128f);
 						sketch.setup();
 						graphics.endDraw();
 						
-						//ByteArrayOutputStream out = new ByteArrayOutputStream();
-					} catch (InstantiationException | IllegalAccessException e) {
+						ByteArrayOutputStream out = new ByteArrayOutputStream();
+						ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
+						
+						sendRunEmbed(out.toByteArray(), errorOut.toString(), sender, instanceID, channel);
+					} catch (InstantiationException | IllegalAccessException | IOException e) {
 						System.err.println("Error occurred while running sketch!");
 						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
@@ -170,6 +177,18 @@ public class SketchRunner extends Thread {
 		embed.setAuthor("Error running code", null, RequestHandler.LOGO);
 		embed.setDescription(error);
 		embed.setColor(Color.red);
+		channel.sendMessage(embed.build()).queue();
+	}
+	
+	protected void sendRunEmbed(byte[] image, String stderr, String sender, String id, MessageChannel channel) {
+		EmbedBuilder embed = new EmbedBuilder();
+		embed.setAuthor("Sketch", null, RequestHandler.LOGO);
+		embed.setColor(Color.cyan);
+		embed.setFooter("Requested by " + sender);
+		if(stderr != null && !stderr.isEmpty()) {
+			embed.addField("Errors", "```\n" + stderr + "```", false);
+		}
+		channel.sendFile(image, id + ".png").queue();
 		channel.sendMessage(embed.build()).queue();
 	}
 	

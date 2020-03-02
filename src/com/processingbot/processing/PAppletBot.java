@@ -1,11 +1,19 @@
 package com.processingbot.processing;
 
+import java.io.PrintStream;
+
 import processing.core.PApplet;
 
 public class PAppletBot extends PApplet {
 
+	private PrintStream errorStream;
+	
 	private void functionUnsupported(String method) {
-		System.err.printf("Function %s() not supported by ProcessingBot\n", method);
+		errorStream.printf("Function %s() not supported by ProcessingBot\n", method);
+	}
+	
+	public void setErrorStream(PrintStream errorStream) {
+		this.errorStream = errorStream;
 	}
 
 	//---------------------------------------------------------------------------
@@ -15,6 +23,9 @@ public class PAppletBot extends PApplet {
 
 	@Override
 	public final void size(int width, int height) {
+		if(width > 2000) {
+			
+		}
 		this.width = width;
 		this.height = height;
 	}

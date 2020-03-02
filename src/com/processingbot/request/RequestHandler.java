@@ -15,7 +15,7 @@ public class RequestHandler {
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
 	
-	public void process(String[] args, MessageChannel channel) {
+	public void process(String[] args, String sender, MessageChannel channel) {
 		if(args.length < 1 || args[0].equalsIgnoreCase("help")) {
 			printHelp(channel);
 		} else if(args[0].startsWith("```") && args[args.length-1].endsWith("```")) {
@@ -23,7 +23,7 @@ public class RequestHandler {
 			int startIdx = code.indexOf('\n');
 			int endIdx = code.length() - 4;
 			code = code.substring(startIdx, endIdx);
-			SketchRunner.runCode(code, channel);
+			SketchRunner.runCode(code, sender, channel);
 		} else {
 			switch(args[0]) {
 			case "codehelp":
