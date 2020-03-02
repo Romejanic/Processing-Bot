@@ -54,8 +54,10 @@ public class ProcessingBot extends ListenerAdapter {
 		builder.addEventListeners(new ProcessingBot());
 		
 		try {
-			builder.build();
-		} catch (LoginException e) {
+			System.out.println("[Bot] Connecting to Discord...");
+			builder.build().awaitReady();
+			System.out.println("[Bot] Logged in successfully!");
+		} catch (LoginException | InterruptedException e) {
 			System.err.println("ERROR: Failed to connect to Discord!");
 			System.err.print("Caused by ");
 			e.printStackTrace();

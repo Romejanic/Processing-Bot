@@ -1,4 +1,4 @@
-package com.processingbot.request;
+package com.processingbot.processing;
 
 import java.awt.Color;
 import java.awt.image.RenderedImage;
@@ -19,7 +19,8 @@ import javax.imageio.ImageIO;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
-import com.processingbot.processing.PAppletBot;
+import com.processingbot.processing.SketchQueue.FutureSketch;
+import com.processingbot.request.RequestHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -28,7 +29,7 @@ import processing.core.PGraphics;
 
 public class SketchRunner extends Thread {
 
-	public static void runCode(String code, String sender, MessageChannel channel) {
+	public static void runCode(String code, String sender, MessageChannel channel, FutureSketch future) {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
 		SketchRunner runner = new SketchRunner("Run Sketch " + instanceID) {
 			public void run() {
@@ -40,6 +41,7 @@ public class SketchRunner extends Thread {
 					System.err.println("Failed to write to file!");
 					e.printStackTrace(System.err);
 					this.sendDiagnosticEmbed("Error while processing your code. Please submit a bug report and give this error:\n\n`" + e.toString() + "`", channel);
+					future.complete(false);
 					return;
 				}
 				Path compiledSketch = this.compileCode(instanceID, sketchPath);
@@ -54,6 +56,7 @@ public class SketchRunner extends Thread {
 					// delete temp resources
 					sketchPath.toFile().delete();
 					compiledSketch.toFile().delete();
+					future.complete(false);
 					return;
 				}
 				
@@ -68,6 +71,7 @@ public class SketchRunner extends Thread {
 					// delete temp resources
 					sketchPath.toFile().delete();
 					compiledSketch.toFile().delete();
+					future.complete(false);
 					return;
 				}
 				
@@ -99,13 +103,16 @@ public class SketchRunner extends Thread {
 						ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
 						
 						sendRunEmbed(out.toByteArray(), errorOut.toString(), sender, instanceID, channel);
+						future.complete(true);
 					} catch (InstantiationException | IllegalAccessException | IOException e) {
 						System.err.println("Error occurred while running sketch!");
 						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
+						future.complete(false);
 					}
 				} else {
 					this.sendDiagnosticEmbed("Error while processing your code. Please submit a bug report and give this error:\n\n`Sketch class was not subclass of PApplet`", channel);
+					future.complete(false);
 				}
 			}
 		};

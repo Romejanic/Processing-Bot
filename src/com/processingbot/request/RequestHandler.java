@@ -2,6 +2,8 @@ package com.processingbot.request;
 
 import java.awt.Color;
 
+import com.processingbot.processing.SketchQueue;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -16,6 +18,12 @@ public class RequestHandler {
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
 	
+	private final SketchQueue queue = new SketchQueue();
+	
+	public RequestHandler() {
+		this.queue.start();
+	}
+	
 	public void process(String[] args, Message msg, MessageChannel channel) {
 		if(args.length < 1 || args[0].equalsIgnoreCase("help")) {
 			printHelp(channel);
@@ -24,8 +32,11 @@ public class RequestHandler {
 			int startIdx = code.indexOf('\n');
 			int endIdx = code.length() - 4;
 			code = code.substring(startIdx, endIdx);
-			SketchRunner.runCode(code, msg.getAuthor().getAsTag(), channel);
+			
 			msg.addReaction("🤔").queue();
+			this.queue.enqueueSketch(code, msg.getAuthor().getAsTag(), channel, (success) -> {
+				msg.removeReaction("🤔").queue();
+			});
 		} else {
 			switch(args[0]) {
 			case "codehelp":
