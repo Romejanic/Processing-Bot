@@ -94,7 +94,7 @@ public class SketchRunner extends Thread {
 							ByteArrayOutputStream out = new ByteArrayOutputStream();
 							try {
 								ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
-								sendRunEmbed(out.toByteArray(), errorOut.toString(), sender, instanceID, channel);
+								sendRunEmbed(out.toByteArray(), sysOut.toString(), errorOut.toString(), sender, instanceID, channel);
 								future.complete(true);
 							} catch (IOException e) {
 								System.err.println("Failed to convert image to bytes!");
@@ -167,6 +167,10 @@ public class SketchRunner extends Thread {
 			// get rid of 'System.' so the 'exit()' part stays
 			code = code.replaceAll("System.", "warning(\"You cannot use System.exit() in sketches. Use exit() instead.\");");
 		}
+		// make exit() calls end the program by adding a return statement
+		while(code.contains("exit()")) {
+			
+		}
 
 		// IMPORTS
 		codeBuilder.append("import processing.core.*;\n");
@@ -174,11 +178,12 @@ public class SketchRunner extends Thread {
 		codeBuilder.append("import processing.event.*;\n");
 		codeBuilder.append("import java.util.HashMap;\n");
 		codeBuilder.append("import java.util.ArrayList;\n");
-		codeBuilder.append("import java.io.File;\n");
-		codeBuilder.append("import java.io.BufferedReader;\n");
-		codeBuilder.append("import java.io.PrintWriter;\n");
-		codeBuilder.append("import java.io.InputStream;\n");
-		codeBuilder.append("import java.io.OutputStream;\n");
+//		-----SANDBOXING-----
+//		codeBuilder.append("import java.io.File;\n");
+//		codeBuilder.append("import java.io.BufferedReader;\n");
+//		codeBuilder.append("import java.io.PrintWriter;\n");
+//		codeBuilder.append("import java.io.InputStream;\n");
+//		codeBuilder.append("import java.io.OutputStream;\n");
 		codeBuilder.append("import java.io.IOException;\n");
 		codeBuilder.append("import com.processingbot.processing.PAppletBot;\n");
 		// CLASS HEADER
@@ -207,11 +212,14 @@ public class SketchRunner extends Thread {
 		channel.sendMessage(embed.build()).queue();
 	}
 
-	protected void sendRunEmbed(byte[] image, String stderr, String sender, String id, MessageChannel channel) {
+	protected void sendRunEmbed(byte[] image, String stdout, String stderr, String sender, String id, MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Sketch", null, RequestHandler.LOGO);
 		embed.setColor(Color.cyan);
 		embed.setFooter("Requested by " + sender);
+		if(stdout != null && !stdout.isEmpty()) {
+			embed.addField("Output", "```\n" + stdout + "```", false);
+		}
 		if(stderr != null && !stderr.isEmpty()) {
 			embed.addField("Errors", "```\n" + stderr + "```", false);
 		}

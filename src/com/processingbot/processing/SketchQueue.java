@@ -77,6 +77,7 @@ public class SketchQueue extends Thread {
 		}
 		
 		protected void complete(Boolean result) {
+			if(this.done) return;
 			this.done = true;
 			this.result = (boolean)result;
 			if(this.callback != null) {
