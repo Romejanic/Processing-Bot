@@ -2,6 +2,7 @@ package com.processingbot.security;
 
 import java.security.Permission;
 
+@Deprecated // wasn't needed in the end
 public class SketchSecurityManager extends SecurityManager {
 
 	private final SecurityManager previous;

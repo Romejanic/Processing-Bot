@@ -12,6 +12,11 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.imageio.ImageIO;
 import javax.tools.JavaCompiler;
@@ -125,16 +130,24 @@ public class SketchRunner extends Thread {
 						sketch.g = graphics;
 						graphics.beginDraw();
 						graphics.background(128f);
-						sketch.setup();
-
+						
+						final Future<Object> f = Executors.newSingleThreadExecutor().submit(() -> {
+							sketch.setup();
+							return true;
+						});
+						f.get(15, TimeUnit.SECONDS);
+						
 						if(!sketch.exitCalled()) {
 							graphics.endDraw();
 							onComplete.run();
 						}
-					} catch (InstantiationException | IllegalAccessException e) {
+					} catch (InstantiationException | IllegalAccessException | InterruptedException | ExecutionException e) {
 						System.err.println("Error occurred while running sketch!");
 						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
+						future.complete(false);
+					} catch (TimeoutException e) {
+						this.sendDiagnosticEmbed("Your sketch took longer than 15 seconds to run.", channel);
 						future.complete(false);
 					}
 				} else {
