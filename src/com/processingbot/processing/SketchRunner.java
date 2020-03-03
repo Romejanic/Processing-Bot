@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -29,6 +30,7 @@ public class SketchRunner extends Thread {
 
 	public static void runCode(String code, String sender, MessageChannel channel, FutureSketch future) {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
+		final String tempDir = System.getProperty("java.io.tmpdir");
 		SketchRunner runner = new SketchRunner("Run Sketch " + instanceID) {
 			public void run() {
 				// first check we can actually run it
@@ -39,7 +41,7 @@ public class SketchRunner extends Thread {
 				}
 				
 				String sketchCode = this.convertCode(instanceID, code);
-				Path sketchPath = Paths.get(System.getProperty("java.io.tmpdir"), "Sketch_" + instanceID + ".java");
+				Path sketchPath = Paths.get(tempDir, "Sketch_" + instanceID + ".java");
 				try {
 					this.writeToPath(sketchCode, sketchPath);
 				} catch (IOException e) {
@@ -49,8 +51,16 @@ public class SketchRunner extends Thread {
 					future.complete(false);
 					return;
 				}
-				Path compiledSketch = this.compileCode(instanceID, sketchPath);
-
+				CompileResult compileResult = this.compileCode(instanceID, sketchPath);
+				if(!compileResult.success) {
+					this.sendDiagnosticEmbed("Failed to compile sketch!\nExit code: `"
+						+ compileResult.exitCode + "`\n\n```\n" + compileResult.stderr.replace(tempDir, "")
+						+ "```", channel);
+					future.complete(false);
+					return;
+				}
+				
+				Path compiledSketch = compileResult.outputPath;
 				URL classURL = null;
 				try {
 					classURL = compiledSketch.getParent().toUri().toURL();
@@ -141,10 +151,15 @@ public class SketchRunner extends Thread {
 		super(name);
 	}
 
-	protected Path compileCode(String instanceID, Path target) {
+	protected CompileResult compileCode(String instanceID, Path target) {
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		compiler.run(null, null, null, target.toFile().getAbsolutePath()); // TODO: log compilation errors
-		return target.getParent().resolve("Sketch_" + instanceID + ".class");
+		ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+		int result = compiler.run(null, null, stderr, target.toFile().getAbsolutePath());
+		if(result != 0) {
+			return new CompileResult(result, stderr.toString());
+		} else {
+			return new CompileResult(target.getParent().resolve("Sketch_" + instanceID + ".class"));
+		}
 	}
 
 	protected void writeToPath(String data, Path path) throws IOException {
