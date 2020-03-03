@@ -1,5 +1,7 @@
 package com.processingbot.processing;
 
+import java.awt.Frame;
+import java.io.File;
 import java.io.PrintStream;
 
 import processing.core.PApplet;
@@ -10,7 +12,7 @@ public class PAppletBot extends PApplet {
 	private static final int MAX_HEIGHT = 2000;
 
 	private static PrintStream outputStream;
-	private PrintStream errorStream;
+	private static PrintStream errorStream;
 	private Runnable exitListener;
 
 	private void functionUnsupported(String method) {
@@ -19,14 +21,14 @@ public class PAppletBot extends PApplet {
 
 	public void setPrintStreams(PrintStream outputStream, PrintStream errorStream) {
 		PAppletBot.outputStream = outputStream;
-		this.errorStream = errorStream;
+		PAppletBot.errorStream = errorStream;
 	}
 
 	public void setExitListener(Runnable exitListener) {
 		this.exitListener = exitListener;
 	}
 
-	public void warning(String text) {
+	static void warning(String text) {
 		errorStream.println(text);
 	}
 
@@ -74,6 +76,16 @@ public class PAppletBot extends PApplet {
 		if(code != 0) errorStream.println("Sketch exited with code " + code);
 		this.exitCalled = true;
 		if(this.exitListener != null) this.exitListener.run();
+	}
+	
+	static public void selectImpl(final String prompt,
+            final String callbackMethod,
+            final File defaultSelection,
+            final Object callbackObject,
+            final Frame parentFrame,
+            final int mode,
+            final PApplet sketch) {
+		warning("Opening dialogs is not supported by ProcessingBot.");
 	}
 
 	// prepare for print hell
@@ -277,7 +289,6 @@ public class PAppletBot extends PApplet {
 		}
 		outputStream.flush();
 	}
-
 
 	static public void debug(String msg) {
 		println("[DEBUG] " + msg);

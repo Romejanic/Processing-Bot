@@ -5,14 +5,12 @@ import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
@@ -33,6 +31,13 @@ public class SketchRunner extends Thread {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
 		SketchRunner runner = new SketchRunner("Run Sketch " + instanceID) {
 			public void run() {
+				// first check we can actually run it
+				if(code.contains("setup()") || code.contains("draw()")) {
+					this.sendDiagnosticEmbed("Sketches run by ProcessingBot must be **static**. You cannot use `setup()` or `draw()`.", channel);
+					future.complete(false);
+					return;
+				}
+				
 				String sketchCode = this.convertCode(instanceID, code);
 				Path sketchPath = Paths.get(System.getProperty("java.io.tmpdir"), "Sketch_" + instanceID + ".java");
 				try {
@@ -209,7 +214,9 @@ public class SketchRunner extends Thread {
 		embed.setAuthor("Error running code", null, RequestHandler.LOGO);
 		embed.setDescription(error);
 		embed.setColor(Color.red);
-		channel.sendMessage(embed.build()).queue();
+		channel.sendMessage(embed.build()).queue(msg -> {
+			msg.addReaction("❌").queue();
+		});
 	}
 
 	protected void sendRunEmbed(byte[] image, String stdout, String stderr, String sender, String id, MessageChannel channel) {
@@ -224,7 +231,9 @@ public class SketchRunner extends Thread {
 			embed.addField("Errors", "```\n" + stderr + "```", false);
 		}
 		channel.sendFile(image, id + ".png").queue();
-		channel.sendMessage(embed.build()).queue();
+		channel.sendMessage(embed.build()).queue(msg -> {
+			msg.addReaction("✅").queue();
+		});
 	}
 
 }
