@@ -2,6 +2,7 @@ package com.processingbot.request;
 
 import java.awt.Color;
 
+import com.processingbot.main.ProcessingBot;
 import com.processingbot.processing.SketchQueue;
 import com.processingbot.processing.SketchRunner;
 
@@ -13,19 +14,17 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 public class RequestHandler {
-	
+
 	public static final String LOGO = "https://cdn.discordapp.com/avatars/681415272187559959/b102e6a2c285d43bb4732d3f90a62673.png?size=64";
 	private static final String GITHUB = "[GitHub](https://github.com/Romejanic/Processing-Bot)";
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
-	private static final String DEV_CHANNEL_NAME = "bot-development";
-	
 	private final SketchQueue queue = new SketchQueue();
-	
+
 	public RequestHandler() {
 		this.queue.start();
 	}
-	
+
 	public void process(String[] args, Message msg, MessageChannel channel) {
 		if(args.length < 1 || args[0].equalsIgnoreCase("help")) {
 			printHelp(channel);
@@ -34,7 +33,7 @@ public class RequestHandler {
 			int startIdx = code.indexOf('\n');
 			int endIdx = code.length() - 4;
 			code = code.substring(startIdx, endIdx);
-			
+
 			msg.addReaction("🤔").queue();
 			this.queue.enqueueSketch(code, msg.getAuthor().getAsTag(), channel, (success) -> {
 				msg.removeReaction("🤔").queue();
@@ -48,11 +47,12 @@ public class RequestHandler {
 				printBotInfo(channel);
 				break;
 			case "debug.getConvertedCode":
-				if(channel.getName().equalsIgnoreCase(DEV_CHANNEL_NAME)) {
+				System.out.println(ProcessingBot.isProduction());
+				if(!ProcessingBot.isProduction()) {
 					if(SketchRunner.getLastConvertedCode().isEmpty()) return;
 					channel.sendMessage("```java\n" + SketchRunner.getLastConvertedCode() + "\n```").queue();
+					break;
 				}
-				break;
 			default:
 				String prefix = channel.getType() == ChannelType.PRIVATE ? "" : "!processing ";
 				channel.sendMessage("Oops, I don't recognize the command `" + args[0] + "`. Type `" + prefix + "help` for a list of commands.").queue();
@@ -60,11 +60,11 @@ public class RequestHandler {
 			}
 		}
 	}
-	
+
 	private void printHelp(MessageChannel channel) {
 		boolean isPM = channel.getType() == ChannelType.PRIVATE;
 		String commandPrefix = !isPM ? "!processing " : "";
-		
+
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Processing Bot Help", null, LOGO);
 		// START DESCRIPTION BUILDING
@@ -89,7 +89,7 @@ public class RequestHandler {
 		// END COMMAND LIST
 		sendEmbed(embed, channel);
 	}
-	
+
 	private void printCodeHelp(MessageChannel channel) {
 		String example = "";
 		if(channel.getType() != ChannelType.PRIVATE) example += "!processing\n";
@@ -98,14 +98,14 @@ public class RequestHandler {
 		example += "fill(#ff0000);\n";
 		example += "rect(10,10,25,25);\n";
 		example += "```\n\n";
-		
+
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Code Example", null, LOGO);
 		embed.setDescription("The command you would send to produce the image shown is:\n\n" + example);
 		embed.setThumbnail("https://cdn.discordapp.com/attachments/681405131199479808/681455709258514462/test.png");
 		sendEmbed(embed, channel);
 	}
-	
+
 	private void printBotInfo(MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Bot Info", null, LOGO);
@@ -113,10 +113,14 @@ public class RequestHandler {
 		StringBuilder builder = embed.getDescriptionBuilder();
 		builder.append(GITHUB).append('\n');
 		builder.append(SERVER).append('\n');
+		// ADD FIELDS
+		embed.addField("Java Version", System.getProperty("java.version"), true);
+		embed.addField("Operating System", System.getProperty("os.name"), true);
+		embed.addField("Build Environment", ProcessingBot.getDevEnvironment(), true);
 		// END LINKS
 		sendEmbed(embed, channel);
 	}
-	
+
 	private void sendEmbed(EmbedBuilder builder, MessageChannel channel) {
 		builder.setFooter(FOOTER);
 		builder.setColor(Color.cyan);
@@ -130,7 +134,7 @@ public class RequestHandler {
 			}
 		});
 	}
-	
+
 	private String join(String[] arr) {
 		StringBuilder builder = new StringBuilder();
 		for(int i = 0; i < arr.length; i++) {
@@ -141,5 +145,5 @@ public class RequestHandler {
 		}
 		return builder.toString();
 	}
-	
+
 }

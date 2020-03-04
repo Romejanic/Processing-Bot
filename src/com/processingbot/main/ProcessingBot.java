@@ -12,6 +12,10 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class ProcessingBot extends ListenerAdapter {
 
+	private static String ENV_PRODUCTION = "Production";
+	private static String ENV_DEVELOPMENT = "Development";
+	private static String ENVIRONMENT = ENV_PRODUCTION;
+	
 	private final RequestHandler requestHandler = new RequestHandler();
 	
 	@Override
@@ -44,6 +48,12 @@ public class ProcessingBot extends ListenerAdapter {
 	}
 	
 	public static void main(String[] args) {
+		// check if we are in development or production
+		if(args.length > 0 && args[0].equalsIgnoreCase("--dev")) {
+			ENVIRONMENT = ENV_DEVELOPMENT;
+		}
+		
+		// start bot code
 		AuthSettings auth = new AuthSettings();
 		if(!auth.loadSettings()) {
 			return; // if the token isn't loaded, kill the program
@@ -63,6 +73,14 @@ public class ProcessingBot extends ListenerAdapter {
 			e.printStackTrace();
 			return;
 		}
+	}
+	
+	public static String getDevEnvironment() {
+		return ENVIRONMENT;
+	}
+	
+	public static boolean isProduction() {
+		return ENV_PRODUCTION.equalsIgnoreCase(getDevEnvironment());
 	}
 	
 }
