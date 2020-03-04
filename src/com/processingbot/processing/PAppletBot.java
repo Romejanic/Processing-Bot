@@ -3,8 +3,11 @@ package com.processingbot.processing;
 import java.awt.Frame;
 import java.io.File;
 import java.io.PrintStream;
+import java.util.function.Consumer;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
+import processing.data.StringList;
 
 public class PAppletBot extends PApplet {
 
@@ -13,10 +16,10 @@ public class PAppletBot extends PApplet {
 
 	private static PrintStream outputStream;
 	private static PrintStream errorStream;
-	private Runnable exitListener;
+	private Consumer<Long> exitListener;
 
 	private void functionUnsupported(String method) {
-		errorStream.printf("Function %s() not supported by ProcessingBot\n", method);
+		errorStream.printf("Function %s() is not supported by ProcessingBot\n", method);
 	}
 
 	public void setPrintStreams(PrintStream outputStream, PrintStream errorStream) {
@@ -24,7 +27,7 @@ public class PAppletBot extends PApplet {
 		PAppletBot.errorStream = errorStream;
 	}
 
-	public void setExitListener(Runnable exitListener) {
+	public void setExitListener(Consumer<Long> exitListener) {
 		this.exitListener = exitListener;
 	}
 
@@ -55,6 +58,12 @@ public class PAppletBot extends PApplet {
 		}
 	}
 
+	@Override
+	public final void size(int width, int height, String renderer) {
+		this.size(width, height);
+		warning("Warning: changing the renderer is not supported at this time");
+	}
+
 	public final void setSize(int width, int height) {
 		this.functionUnsupported("setSize");
 	}
@@ -68,24 +77,85 @@ public class PAppletBot extends PApplet {
 	}
 
 	@Override
-	public void exit() {
+	public final void exit() {
 		exit(0);
 	}
 
-	public void exit(int code) {
+	@Override
+	public final void exitActual() {
+		this.functionUnsupported("exitActual");
+	}
+
+	public final void exit(int code) {
 		if(code != 0) errorStream.println("Sketch exited with code " + code);
 		this.exitCalled = true;
-		if(this.exitListener != null) this.exitListener.run();
+		if(this.exitListener != null) this.exitListener.accept(-1l);
 	}
-	
+
 	static public void selectImpl(final String prompt,
-            final String callbackMethod,
-            final File defaultSelection,
-            final Object callbackObject,
-            final Frame parentFrame,
-            final int mode,
-            final PApplet sketch) {
+			final String callbackMethod,
+			final File defaultSelection,
+			final Object callbackObject,
+			final Frame parentFrame,
+			final int mode,
+			final PApplet sketch) {
 		warning("Opening dialogs is not supported by ProcessingBot.");
+	}
+
+	@Override
+	public final void dispose() {
+		this.functionUnsupported("dispose");
+	}
+
+	@Override
+	public void link(String url) {
+		this.functionUnsupported("link");
+	}
+
+	static public Process launch(String... args) {
+		warning("You cannot launch external processes on ProcessingBot for security reasons.");
+		return null;
+	}
+
+	static public Process exec(String... args) {
+		warning("You cannot launch external processes on ProcessingBot for security reasons.");
+		return null;
+	}
+
+	static public int exec(StringList stdout, StringList stderr, String... args) {
+		warning("You cannot launch external processes on ProcessingBot for security reasons.");
+		return -1;
+	}
+
+	static public int shell(StringList stdout, StringList stderr, String... args) {
+		warning("You cannot launch external processes on ProcessingBot for security reasons.");
+		return -1;
+	}
+
+	@Override
+	public final PGraphics beginRecord(String renderer, String filename) {
+		this.functionUnsupported("beginRecord");
+		return g;
+	}
+
+	@Override
+	public final void beginRecord(PGraphics recorder) {
+		this.functionUnsupported("beginRecord");
+	}
+
+	@Override
+	public final void endRecord() {
+		this.functionUnsupported("endRecord");
+	}
+
+	@Override
+	public final void frameMoved(int x, int y) {
+		errorStream.println(EXTERNAL_MOVE + " " + x + " " + y);
+		errorStream.flush();  // doesn't seem to help or hurt
+	}
+
+	static public void runSketch(final String[] args, final PApplet constructedSketch) {
+		warning("runSketch() is unsupported.");
 	}
 
 	// prepare for print hell

@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
 import javax.tools.JavaCompiler;
@@ -31,6 +32,8 @@ import processing.awt.PGraphicsJava2D;
 import processing.core.PGraphics;
 
 public class SketchRunner extends Thread {
+	
+	private static String lastCode = "";
 
 	public static void runCode(String code, String sender, MessageChannel channel, FutureSketch future) {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
@@ -45,6 +48,7 @@ public class SketchRunner extends Thread {
 				}
 				
 				String sketchCode = this.convertCode(instanceID, code);
+				lastCode = sketchCode;
 				Path sketchPath = Paths.get(tempDir, "Sketch_" + instanceID + ".java");
 				try {
 					this.writeToPath(sketchCode, sketchPath);
@@ -57,6 +61,7 @@ public class SketchRunner extends Thread {
 				}
 				CompileResult compileResult = this.compileCode(instanceID, sketchPath);
 				if(!compileResult.success) {
+					sketchPath.toFile().delete();
 					this.sendDiagnosticEmbed("Failed to compile sketch!\nExit code: `"
 						+ compileResult.exitCode + "`\n\n```\n" + compileResult.stderr.replace(tempDir, "")
 						+ "```", channel);
@@ -108,12 +113,12 @@ public class SketchRunner extends Thread {
 						ByteArrayOutputStream sysOut   = new ByteArrayOutputStream();
 						ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
 						sketch.setPrintStreams(new PrintStream(sysOut), new PrintStream(errorOut));
-
-						Runnable onComplete = () -> {
+						
+						Consumer<Long> onComplete = (elapsed) -> {
 							ByteArrayOutputStream out = new ByteArrayOutputStream();
 							try {
 								ImageIO.write((RenderedImage)graphics.getImage(), "PNG", out);
-								sendRunEmbed(out.toByteArray(), sysOut.toString(), errorOut.toString(), sender, instanceID, channel);
+								sendRunEmbed(out.toByteArray(), sysOut.toString(), errorOut.toString(), sender, instanceID, elapsed, channel);
 								future.complete(true);
 							} catch (IOException e) {
 								System.err.println("Failed to convert image to bytes!");
@@ -131,19 +136,18 @@ public class SketchRunner extends Thread {
 						graphics.beginDraw();
 						graphics.background(128f);
 						
-						final Future<Object> f = Executors.newSingleThreadExecutor().submit(() -> {
+						final Future<Long> f = Executors.newSingleThreadExecutor().submit(() -> {
+							long start = System.currentTimeMillis();
 							sketch.setup();
-							return true;
+							return System.currentTimeMillis() - start;
 						});
-						f.get(15, TimeUnit.SECONDS);
+						long elapsed = f.get(15, TimeUnit.SECONDS); // restrict to 15 seconds
 						
 						if(!sketch.exitCalled()) {
 							graphics.endDraw();
-							onComplete.run();
+							onComplete.accept(elapsed);
 						}
 					} catch (InstantiationException | IllegalAccessException | InterruptedException | ExecutionException e) {
-						System.err.println("Error occurred while running sketch!");
-						e.printStackTrace(System.err);
 						this.sendDiagnosticEmbed("There was an error running your sketch.\n\n`" + e.toString() + "`", channel);
 						future.complete(false);
 					} catch (TimeoutException e) {
@@ -246,21 +250,34 @@ public class SketchRunner extends Thread {
 		});
 	}
 
-	protected void sendRunEmbed(byte[] image, String stdout, String stderr, String sender, String id, MessageChannel channel) {
+	protected void sendRunEmbed(byte[] image, String stdout, String stderr, String sender, String id, long elapsed, MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Sketch", null, RequestHandler.LOGO);
 		embed.setColor(Color.cyan);
 		embed.setFooter("Requested by " + sender);
+		if(elapsed >= 0) {
+			String secs = String.valueOf((float)elapsed / 1000f);
+			embed.addField("Time Taken", secs + "s", false);
+		}
 		if(stdout != null && !stdout.isEmpty()) {
-			embed.addField("Output", "```\n" + stdout + "```", false);
+			embed.addField("Output", "```\n" + restrictLength(stdout,1000) + "```", false);
 		}
 		if(stderr != null && !stderr.isEmpty()) {
-			embed.addField("Errors", "```\n" + stderr + "```", false);
+			embed.addField("Errors", "```\n" + restrictLength(stderr,1000) + "```", false);
 		}
 		channel.sendFile(image, id + ".png").queue();
 		channel.sendMessage(embed.build()).queue(msg -> {
 			msg.addReaction("✅").queue();
 		});
 	}
+	
+	private String restrictLength(String str, int length) {
+		if(str.length() < length) return str;
+		return str.substring(0, length - 4) + "...";
+	}
 
+	public static String getLastConvertedCode() {
+		return lastCode;
+	}
+	
 }

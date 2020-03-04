@@ -3,6 +3,7 @@ package com.processingbot.request;
 import java.awt.Color;
 
 import com.processingbot.processing.SketchQueue;
+import com.processingbot.processing.SketchRunner;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -17,6 +18,7 @@ public class RequestHandler {
 	private static final String GITHUB = "[GitHub](https://github.com/Romejanic/Processing-Bot)";
 	private static final String SERVER = "[Support Server](https://discord.gg/WNCKCaF)";
 	private static final String FOOTER = "Made with ❤️ by @memedealer#6607";
+	private static final String DEV_CHANNEL_NAME = "bot-development";
 	
 	private final SketchQueue queue = new SketchQueue();
 	
@@ -44,6 +46,12 @@ public class RequestHandler {
 				break;
 			case "botinfo":
 				printBotInfo(channel);
+				break;
+			case "debug.getConvertedCode":
+				if(channel.getName().equalsIgnoreCase(DEV_CHANNEL_NAME)) {
+					if(SketchRunner.getLastConvertedCode().isEmpty()) return;
+					channel.sendMessage("```java\n" + SketchRunner.getLastConvertedCode() + "\n```").queue();
+				}
 				break;
 			default:
 				String prefix = channel.getType() == ChannelType.PRIVATE ? "" : "!processing ";
