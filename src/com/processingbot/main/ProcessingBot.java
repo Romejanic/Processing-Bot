@@ -4,7 +4,6 @@ import javax.security.auth.login.LoginException;
 
 import com.processingbot.request.RequestHandler;
 
-import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -58,14 +57,13 @@ public class ProcessingBot extends ListenerAdapter {
 		if(!auth.loadSettings()) {
 			return; // if the token isn't loaded, kill the program
 		}
-		
-		JDABuilder builder = new JDABuilder(AccountType.BOT);
-		builder.setToken(auth.botToken);
-		builder.addEventListeners(new ProcessingBot());
-		
+
 		try {
 			System.out.println("[Bot] Connecting to Discord...");
-			builder.build().awaitReady();
+			JDABuilder.createDefault(auth.botToken)
+					.addEventListeners(new ProcessingBot())
+					.build()
+					.awaitReady();
 			System.out.println("[Bot] Logged in successfully!");
 		} catch (LoginException | InterruptedException e) {
 			System.err.println("ERROR: Failed to connect to Discord!");

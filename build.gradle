@@ -18,7 +18,8 @@ dependencies {
 	compile ('club.minnced:opus-java:1.0.4@pom') {
         transitive = true // gradle defaults to transitive false with @pom
     }
-	compile 'net.dv8tion:JDA:4.1.1_108'
+	compile 'net.dv8tion:JDA:4.2.0_236'
+	compile 'org.processing:core:3.3.6'
 }
 
 sourceSets {
