@@ -262,9 +262,10 @@ public class SketchRunner extends Thread {
 		if(stderr != null && !stderr.isEmpty()) {
 			embed.addField("Errors", "```\n" + restrictLength(stderr,1000) + "```", false);
 		}
-		channel.sendFile(image, id + ".png").queue();
-		channel.sendMessage(embed.build()).queue(msg -> {
-			msg.addReaction("✅").queue();
+		channel.sendFile(image, id + ".png").queue(m -> {
+			channel.sendMessage(embed.build()).queue(msg -> {
+				msg.addReaction("✅").queue();
+			});
 		});
 	}
 	
