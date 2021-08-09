@@ -12,13 +12,16 @@ repositories {
 	mavenCentral()
 	jcenter()
 	google()
+	maven {
+      name 'm2-dv8tion'
+      url 'https://m2.dv8tion.net/releases'
+    }
 }
 
 dependencies {
-	compile ('club.minnced:opus-java:1.0.4@pom') {
-        transitive = true // gradle defaults to transitive false with @pom
+	compile ("net.dv8tion:JDA:4.2.0_236") {
+        exclude module: 'opus-java'
     }
-	compile 'net.dv8tion:JDA:4.2.0_236'
 	compile 'org.processing:core:3.3.6'
 }
 

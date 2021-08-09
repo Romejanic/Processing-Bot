@@ -203,10 +203,6 @@ public class SketchRunner extends Thread {
 			// get rid of 'System.' so the 'exit()' part stays
 			code = code.replaceAll("System.", "warning(\"You cannot use System.exit() in sketches. Use exit() instead.\");");
 		}
-		// make exit() calls end the program by adding a return statement
-		while(code.contains("exit()")) {
-			
-		}
 
 		// IMPORTS
 		codeBuilder.append("import processing.core.*;\n");
