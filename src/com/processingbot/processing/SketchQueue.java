@@ -9,13 +9,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
 
 public class SketchQueue extends Thread {
 
 	private volatile boolean running = true;
 	private final Queue<SketchData> sketchQueue = new LinkedBlockingQueue<SketchData>();
 	
-	public FutureSketch enqueueSketch(String code, String author, MessageChannel channel, Consumer<Boolean> callback) {
+	public FutureSketch enqueueSketch(String code, User author, MessageChannel channel, Consumer<Boolean> callback) {
 		FutureSketch future = new FutureSketch(callback);
 		this.sketchQueue.offer(new SketchData(code, author, channel, future));
 		return future;

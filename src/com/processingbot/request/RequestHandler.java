@@ -35,7 +35,7 @@ public class RequestHandler {
 			code = code.substring(startIdx, endIdx);
 
 			msg.addReaction("🤔").queue();
-			this.queue.enqueueSketch(code, msg.getAuthor().getAsTag(), channel, (success) -> {
+			this.queue.enqueueSketch(code, msg.getAuthor(), channel, (success) -> {
 				msg.removeReaction("🤔").queue();
 			});
 		} else {

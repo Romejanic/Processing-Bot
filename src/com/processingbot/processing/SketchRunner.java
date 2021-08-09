@@ -28,6 +28,7 @@ import com.processingbot.request.RequestHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
 import processing.awt.PGraphicsJava2D;
 import processing.core.PGraphics;
 
@@ -35,7 +36,7 @@ public class SketchRunner extends Thread {
 	
 	private static String lastCode = "";
 
-	public static void runCode(String code, String sender, MessageChannel channel, FutureSketch future) {
+	public static void runCode(String code, User sender, MessageChannel channel, FutureSketch future) {
 		final String instanceID = UUID.randomUUID().toString().replaceAll("-", "");
 		final String tempDir = System.getProperty("java.io.tmpdir");
 		SketchRunner runner = new SketchRunner("Run Sketch " + instanceID) {
@@ -246,11 +247,11 @@ public class SketchRunner extends Thread {
 		});
 	}
 
-	protected void sendRunEmbed(byte[] image, String stdout, String stderr, String sender, String id, long elapsed, MessageChannel channel) {
+	protected void sendRunEmbed(byte[] image, String stdout, String stderr, User sender, String id, long elapsed, MessageChannel channel) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor("Sketch", null, RequestHandler.LOGO);
 		embed.setColor(Color.cyan);
-		embed.setFooter("Requested by " + sender);
+		embed.setFooter("Requested by " + sender.getAsTag(), sender.getEffectiveAvatarUrl());
 		if(elapsed >= 0) {
 			String secs = String.valueOf((float)elapsed / 1000f);
 			embed.addField("Time Taken", secs + "s", false);
