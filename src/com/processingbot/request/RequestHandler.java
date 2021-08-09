@@ -14,6 +14,8 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 public class RequestHandler {
+	
+	public static final String VERSION = "0.1.0 Beta";
 
 	public static final String LOGO = "https://cdn.discordapp.com/avatars/681415272187559959/b102e6a2c285d43bb4732d3f90a62673.png?size=64";
 	private static final String GITHUB = "[GitHub](https://github.com/Romejanic/Processing-Bot)";
@@ -47,7 +49,6 @@ public class RequestHandler {
 				printBotInfo(channel);
 				break;
 			case "debug.getConvertedCode":
-				System.out.println(ProcessingBot.isProduction());
 				if(!ProcessingBot.isProduction()) {
 					if(SketchRunner.getLastConvertedCode().isEmpty()) return;
 					channel.sendMessage("```java\n" + SketchRunner.getLastConvertedCode() + "\n```").queue();
@@ -95,7 +96,7 @@ public class RequestHandler {
 		if(channel.getType() != ChannelType.PRIVATE) example += "!processing\n";
 		example += "```processing\n";
 		example += "size(50,50);\n";
-		example += "fill(#ff0000);\n";
+		example += "fill(255,0,0);\n";
 		example += "rect(10,10,25,25);\n";
 		example += "```\n\n";
 
@@ -114,6 +115,10 @@ public class RequestHandler {
 		builder.append(GITHUB).append('\n');
 		builder.append(SERVER).append('\n');
 		// ADD FIELDS
+		Runtime r = Runtime.getRuntime();
+		embed.addField("Bot Version", VERSION, true);
+		embed.addField("Processing Version", "3.3.6", true);
+		embed.addField("Memory Usage", (100-(r.freeMemory()*100/r.totalMemory())) + "%", true);
 		embed.addField("Java Version", System.getProperty("java.version"), true);
 		embed.addField("Operating System", System.getProperty("os.name"), true);
 		embed.addField("Build Environment", ProcessingBot.getDevEnvironment(), true);
